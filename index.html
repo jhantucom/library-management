@@ -127,25 +127,55 @@ const firebaseConfig = {
   appId: "1:562837358063:web:b62b1be56dccb351dc621a"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const cloudDoc = db.collection("library").doc("main");
+let db = null;
+let cloudDoc = null;
+let cloudReady = false;
+
+try {
+  if (typeof firebase !== "undefined") {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    cloudDoc = db.collection("library").doc("main");
+  } else {
+    console.warn("Firebase SDK not loaded; local mode enabled.");
+  }
+} catch (e) {
+  console.error("Firebase init error:", e);
+  db = null;
+  cloudDoc = null;
+}
 
 const KEY="libraryFullAppV1";
-let cloudReady = false;
-let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
-  members:[],payments:[],notices:[],settings:{name:"Library Admin Dashboard"}
-};
+let data;
+try {
+  data = JSON.parse(localStorage.getItem(KEY) || "null");
+} catch(e) {
+  console.warn("Local data reset:", e);
+  data = null;
+}
+if (!data || typeof data !== "object") {
+  data={members:[],payments:[],notices:[],settings:{name:"Library Admin Dashboard"}};
+}
+data.members = Array.isArray(data.members) ? data.members : [];
+data.payments = Array.isArray(data.payments) ? data.payments : [];
+data.notices = Array.isArray(data.notices) ? data.notices : [];
+data.settings = data.settings && typeof data.settings === "object"
+  ? data.settings : {name:"Library Admin Dashboard"};
 
 function localSave(){
   localStorage.setItem(KEY,JSON.stringify(data));
 }
 
 async function loadCloud(){
+  if(!cloudDoc){
+    cloudReady=false;
+    updateAll();
+    return;
+  }
   try{
     const snap = await cloudDoc.get();
     if(snap.exists){
-      const cloudData = snap.data();
+      const cloudData = snap.data() || {};
       data = {
         members:Array.isArray(cloudData.members)?cloudData.members:[],
         payments:Array.isArray(cloudData.payments)?cloudData.payments:[],
@@ -159,10 +189,9 @@ async function loadCloud(){
     cloudReady = true;
     updateAll();
   }catch(e){
-    console.error(e);
-    cloudReady = false;
+    console.error("Firestore load error:", e);
+    cloudReady=false;
     updateAll();
-    alert("Firebase database connect नहीं हुआ। पहले Firestore Database बनाएं। फिलहाल app local data पर चलेगा।");
   }
 }
 
@@ -170,6 +199,7 @@ async function persist(){
   localSave();
   updateAll();
   if(!cloudReady)return;
+  if(!cloudDoc)return;
   try{
     await cloudDoc.set(data);
   }catch(e){
@@ -191,6 +221,12 @@ function login(){
     msg.innerText="Username या Password गलत है";
   }
 }
+document.getElementById("loginPass").addEventListener("keydown",function(e){
+  if(e.key==="Enter") login();
+});
+document.getElementById("loginUser").addEventListener("keydown",function(e){
+  if(e.key==="Enter") login();
+});
 function logout(){sessionStorage.removeItem("libLogin");location.reload()}
 if(sessionStorage.getItem("libLogin")==="1")document.getElementById("login").style.display="none";
 
@@ -266,7 +302,7 @@ function saveSettings(){let n=document.getElementById("libraryName").value.trim(
 async function clearAllData(){
   if(confirm("सारा app data delete होगा. Continue?")){
     localStorage.removeItem(KEY);
-    try{await cloudDoc.delete()}catch(e){console.error(e)}
+    if(cloudDoc){try{await cloudDoc.delete()}catch(e){console.error(e)}}
     location.reload();
   }
 }
