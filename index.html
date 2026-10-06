@@ -113,8 +113,72 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 </div>
 </div>
 
+
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBzyroJhZVEGAgqxNckWB36yQkA3HXUIls",
+  authDomain: "library-management-93ad4.firebaseapp.com",
+  projectId: "library-management-93ad4",
+  storageBucket: "library-management-93ad4.firebasestorage.app",
+  messagingSenderId: "562837358063",
+  appId: "1:562837358063:web:b62b1be56dccb351dc621a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const cloudDoc = db.collection("library").doc("main");
+
 const KEY="libraryFullAppV1";
+let cloudReady = false;
+let data=JSON.parse(localStorage.getItem(KEY)||"null")||{
+  members:[],payments:[],notices:[],settings:{name:"Library Admin Dashboard"}
+};
+
+function localSave(){
+  localStorage.setItem(KEY,JSON.stringify(data));
+}
+
+async function loadCloud(){
+  try{
+    const snap = await cloudDoc.get();
+    if(snap.exists){
+      const cloudData = snap.data();
+      data = {
+        members:Array.isArray(cloudData.members)?cloudData.members:[],
+        payments:Array.isArray(cloudData.payments)?cloudData.payments:[],
+        notices:Array.isArray(cloudData.notices)?cloudData.notices:[],
+        settings:cloudData.settings || {name:"Library Admin Dashboard"}
+      };
+      localSave();
+    }else{
+      await cloudDoc.set(data);
+    }
+    cloudReady = true;
+    updateAll();
+  }catch(e){
+    console.error(e);
+    cloudReady = false;
+    updateAll();
+    alert("Firebase database connect नहीं हुआ। पहले Firestore Database बनाएं। फिलहाल app local data पर चलेगा।");
+  }
+}
+
+async function persist(){
+  localSave();
+  updateAll();
+  if(!cloudReady)return;
+  try{
+    await cloudDoc.set(data);
+  }catch(e){
+    console.error(e);
+    alert("Cloud save failed. Internet/Firestore settings check करें।");
+  }
+}
+
+"libraryFullAppV1";
 let data=JSON.parse(localStorage.getItem(KEY)||"null")||{members:[],payments:[],notices:[],settings:{name:"Library Admin Dashboard"}};
 
 function persist(){localStorage.setItem(KEY,JSON.stringify(data));updateAll()}
@@ -195,7 +259,13 @@ let collection=data.payments.reduce((a,p)=>a+Number(p.amount||0),0);
 document.getElementById("reportBox").innerHTML=`<div class="grid3"><div class="card"><h3>Members</h3><div class="num">${data.members.length}</div></div><div class="card"><h3>Occupied Seats</h3><div class="num">${occupied}</div></div><div class="card"><h3>Pending</h3><div class="num">₹${pending}</div></div></div><table><tr><th>Name</th><th>Seat</th><th>Fee</th><th>Status</th></tr>${data.members.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(m.seat||"-")}</td><td>₹${m.fee}</td><td>${esc(m.status)}</td></tr>`).join("")}</table><p style="margin-top:12px"><b>Total payment collection: ₹${collection}</b></p>`;
 }
 function saveSettings(){let n=document.getElementById("libraryName").value.trim();if(n){data.settings.name=n;persist();alert("Settings saved")}}
-function clearAllData(){if(confirm("सारा app data delete होगा. Continue?")){localStorage.removeItem(KEY);location.reload()}}
+async function clearAllData(){
+  if(confirm("सारा app data delete होगा. Continue?")){
+    localStorage.removeItem(KEY);
+    try{await cloudDoc.delete()}catch(e){console.error(e)}
+    location.reload();
+  }
+}
 function updateAll(){
 document.getElementById("libTitle").innerText=data.settings.name||"Library Admin Dashboard";
 document.getElementById("totalMembers").innerText=data.members.length;
@@ -208,6 +278,7 @@ renderMembers();renderSeats();renderFees();renderNotices();renderReports();
 document.getElementById("libraryName").value=data.settings.name||"";
 }
 updateAll();
+loadCloud();
 </script>
 </body>
 </html>
