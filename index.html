@@ -37,10 +37,10 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 <div id="login">
 <div class="loginbox">
 <h2>🔐 Admin Login</h2>
-<input id="loginUser" placeholder="Username" value="admin">
+<input id="loginUser" type="email" placeholder="Admin Email">
 <input id="loginPass" type="password" placeholder="Password">
 <button type="button" style="width:100%" onclick="return window.login()">Login</button>
-<p class="small" style="margin-top:10px">Default: admin / admin123</p>
+<p class="small" style="margin-top:10px">Firebase Authentication से बनाया गया Admin Email और Password डालें</p>
 <p id="loginMsg" style="color:#dc2626"></p>
 </div>
 </div>
@@ -114,25 +114,8 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 </div>
 
 
-<script>
-/* Independent login: works even if Firebase/app scripts fail */
-window.login = function () {
-  var u = document.getElementById("loginUser");
-  var p = document.getElementById("loginPass");
-  var msg = document.getElementById("loginMsg");
-  if (!u || !p) return false;
-  if (u.value.trim() === "admin" && p.value === "admin123") {
-    try { sessionStorage.setItem("libLogin", "1"); } catch (e) {}
-    var box = document.getElementById("login");
-    if (box) box.style.display = "none";
-    if (msg) msg.textContent = "";
-    return false;
-  }
-  if (msg) msg.textContent = "Username या Password गलत है";
-  return false;
-};
-</script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
 
 <script>
@@ -146,21 +129,22 @@ const firebaseConfig = {
 };
 
 let db = null;
+let auth = null;
 let cloudDoc = null;
 let cloudReady = false;
+let firebaseReady = false;
 
 try {
   if (typeof firebase !== "undefined") {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
     db = firebase.firestore();
     cloudDoc = db.collection("library").doc("main");
-  } else {
-    console.warn("Firebase SDK not loaded; local mode enabled.");
+    firebaseReady = true;
   }
 } catch (e) {
   console.error("Firebase init error:", e);
-  db = null;
-  cloudDoc = null;
+  auth = null; db = null; cloudDoc = null; firebaseReady = false;
 }
 
 const KEY="libraryFullAppV1";
@@ -185,7 +169,7 @@ function localSave(){
 }
 
 async function loadCloud(){
-  if(!cloudDoc){
+  if(!cloudDoc || !auth || !auth.currentUser){
     cloudReady=false;
     updateAll();
     return;
@@ -218,6 +202,7 @@ async function persist(){
   updateAll();
   if(!cloudReady)return;
   if(!cloudDoc)return;
+  if(!auth || !auth.currentUser)return;
   try{
     await cloudDoc.set(data);
   }catch(e){
@@ -226,27 +211,43 @@ async function persist(){
   }
 }
 
-function login(){
-  const u=document.getElementById("loginUser").value.trim();
-  const p=document.getElementById("loginPass").value;
+window.login = async function(){
+  const email=document.getElementById("loginUser").value.trim();
+  const password=document.getElementById("loginPass").value;
   const msg=document.getElementById("loginMsg");
-  if(u==="admin" && p==="admin123"){
+  if(!auth){ msg.innerText="Firebase Authentication load नहीं हुआ। Internet check करके refresh करें।"; return false; }
+  if(!email || !password){ msg.innerText="Email और Password दोनों डालें।"; return false; }
+  msg.innerText="Login हो रहा है...";
+  try{
+    await auth.signInWithEmailAndPassword(email,password);
     document.getElementById("login").style.display="none";
-    sessionStorage.setItem("libLogin","1");
     msg.innerText="";
-    updateAll();
-  }else{
-    msg.innerText="Username या Password गलत है";
+    await loadCloud();
+  }catch(e){
+    console.error(e);
+    msg.innerText="Login failed: Email या Password गलत है।";
   }
+  return false;
+};
+
+document.getElementById("loginPass").addEventListener("keydown",function(e){ if(e.key==="Enter") window.login(); });
+document.getElementById("loginUser").addEventListener("keydown",function(e){ if(e.key==="Enter") window.login(); });
+
+async function logout(){
+  try{ if(auth) await auth.signOut(); }catch(e){ console.error(e); }
+  document.getElementById("login").style.display="flex";
 }
-document.getElementById("loginPass").addEventListener("keydown",function(e){
-  if(e.key==="Enter") window.login();
-});
-document.getElementById("loginUser").addEventListener("keydown",function(e){
-  if(e.key==="Enter") window.login();
-});
-function logout(){sessionStorage.removeItem("libLogin");location.reload()}
-if(sessionStorage.getItem("libLogin")==="1")document.getElementById("login").style.display="none";
+
+if(auth){
+  auth.onAuthStateChanged(async function(user){
+    if(user){
+      document.getElementById("login").style.display="none";
+      await loadCloud();
+    }else{
+      document.getElementById("login").style.display="flex";
+    }
+  });
+}
 
 function openSec(id){
 document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));
@@ -320,7 +321,7 @@ function saveSettings(){let n=document.getElementById("libraryName").value.trim(
 async function clearAllData(){
   if(confirm("सारा app data delete होगा. Continue?")){
     localStorage.removeItem(KEY);
-    if(cloudDoc){try{await cloudDoc.delete()}catch(e){console.error(e)}}
+    if(cloudDoc && auth && auth.currentUser){try{await cloudDoc.delete()}catch(e){console.error(e)}}
     location.reload();
   }
 }
@@ -336,7 +337,6 @@ renderMembers();renderSeats();renderFees();renderNotices();renderReports();
 document.getElementById("libraryName").value=data.settings.name||"";
 }
 updateAll();
-loadCloud();
 </script>
 </body>
 </html>
