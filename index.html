@@ -39,7 +39,7 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 <h2>🔐 Admin Login</h2>
 <input id="loginUser" placeholder="Username" value="admin">
 <input id="loginPass" type="password" placeholder="Password">
-<button style="width:100%" onclick="login()">Login</button>
+<button type="button" style="width:100%" onclick="return window.login()">Login</button>
 <p class="small" style="margin-top:10px">Default: admin / admin123</p>
 <p id="loginMsg" style="color:#dc2626"></p>
 </div>
@@ -114,6 +114,24 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid
 </div>
 
 
+<script>
+/* Independent login: works even if Firebase/app scripts fail */
+window.login = function () {
+  var u = document.getElementById("loginUser");
+  var p = document.getElementById("loginPass");
+  var msg = document.getElementById("loginMsg");
+  if (!u || !p) return false;
+  if (u.value.trim() === "admin" && p.value === "admin123") {
+    try { sessionStorage.setItem("libLogin", "1"); } catch (e) {}
+    var box = document.getElementById("login");
+    if (box) box.style.display = "none";
+    if (msg) msg.textContent = "";
+    return false;
+  }
+  if (msg) msg.textContent = "Username या Password गलत है";
+  return false;
+};
+</script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
 
@@ -222,10 +240,10 @@ function login(){
   }
 }
 document.getElementById("loginPass").addEventListener("keydown",function(e){
-  if(e.key==="Enter") login();
+  if(e.key==="Enter") window.login();
 });
 document.getElementById("loginUser").addEventListener("keydown",function(e){
-  if(e.key==="Enter") login();
+  if(e.key==="Enter") window.login();
 });
 function logout(){sessionStorage.removeItem("libLogin");location.reload()}
 if(sessionStorage.getItem("libLogin")==="1")document.getElementById("login").style.display="none";
