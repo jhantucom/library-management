@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Library Management</title>
-
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
 body{background:#f4f6f9;color:#222}
@@ -16,42 +15,28 @@ header p{margin-top:7px}
 .card{background:white;padding:18px;border-radius:14px;box-shadow:0 3px 12px #0001}
 .card h2{font-size:16px;color:#555}
 .number{font-size:30px;font-weight:bold;color:#1e3a8a;margin-top:8px}
-
 .menu{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0}
-button{border:0;border-radius:10px;padding:14px;background:#1e3a8a;color:white;font-size:16px}
+button{border:0;border-radius:10px;padding:14px;background:#1e3a8a;color:white;font-size:16px;cursor:pointer}
 button.danger{background:#dc2626}
 button.edit{background:#2563eb}
 button.gray{background:#64748b}
-
 .section{display:none;background:white;padding:18px;border-radius:14px;margin-top:18px}
 .section.active{display:block}
 .section h2{margin-bottom:15px;color:#1e3a8a}
-
-input,select{
-width:100%;padding:12px;margin:6px 0 12px;
-border:1px solid #ccc;border-radius:8px;font-size:15px
-}
-
-.member{
-border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:12px
-}
+input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccc;border-radius:8px;font-size:15px}
+.member{border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:12px}
 .member h3{color:#1e3a8a;margin-bottom:7px}
 .member p{margin:5px 0}
 .actions{display:flex;gap:8px;margin-top:10px}
 .actions button{flex:1;font-size:14px;padding:10px}
-
 .search{margin-bottom:10px}
-
 .back{background:#64748b;margin-bottom:15px}
-
-@media(max-width:600px){
-.cards,.menu{grid-template-columns:1fr}
-}
+.notice{background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:8px;margin-top:12px}
+@media(max-width:600px){.cards,.menu{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
-
 <header>
 <h1>📚 Library Management</h1>
 <p>Library Admin Dashboard</p>
@@ -59,9 +44,7 @@ border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:12px
 
 <div class="container">
 
-<!-- DASHBOARD -->
 <div id="dashboard">
-
 <div class="cards">
 
 <div class="card">
@@ -87,129 +70,103 @@ border:1px solid #ddd;border-radius:10px;padding:14px;margin-top:12px
 </div>
 
 <div class="menu">
-<button onclick="showMembers()">👥 Members</button>
-<button onclick="showMembers();addMemberForm()">➕ Add Member</button>
-<button>💺 Seats</button>
-<button>💰 Fees</button>
-<button>📢 Notices</button>
-<button>📊 Reports</button>
+<button type="button" onclick="showMembers()">👥 Members</button>
+<button type="button" onclick="showMembers();addMemberForm()">➕ Add Member</button>
+<button type="button" onclick="showComingSoon('Seats')">💺 Seats</button>
+<button type="button" onclick="showComingSoon('Fees')">💰 Fees</button>
+<button type="button" onclick="showComingSoon('Notices')">📢 Notices</button>
+<button type="button" onclick="showComingSoon('Reports')">📊 Reports</button>
+</div>
 </div>
 
-</div>
-
-<!-- MEMBERS -->
 <div id="membersSection" class="section">
-
-<button class="back" onclick="showDashboard()">← Dashboard</button>
+<button type="button" class="back" onclick="showDashboard()">← Dashboard</button>
 
 <h2>👥 Members Management</h2>
 
-<button onclick="addMemberForm()">➕ Add New Member</button>
+<button type="button" onclick="addMemberForm()">➕ Add New Member</button>
 
-<input
-class="search"
-id="search"
-placeholder="🔍 Search by name or mobile..."
-oninput="displayMembers()">
+<input class="search" id="search" placeholder="🔍 Search by name or mobile..." oninput="displayMembers()">
 
 <div id="memberForm"></div>
-
 <div id="membersList"></div>
-
 </div>
 
 </div>
 
 <script>
-
-let members=JSON.parse(localStorage.getItem("libraryMembers"))||[];
+let members = JSON.parse(localStorage.getItem("libraryMembers") || "[]");
 
 function save(){
-localStorage.setItem("libraryMembers",JSON.stringify(members));
+localStorage.setItem("libraryMembers", JSON.stringify(members));
 updateDashboard();
 displayMembers();
 }
 
 function updateDashboard(){
+document.getElementById("totalMembers").innerText = members.length;
 
-document.getElementById("totalMembers").innerText=members.length;
-
-let occupied=new Set(
-members
-.filter(m=>m.seat)
-.map(m=>m.seat)
+let occupied = new Set(
+members.filter(m => m.seat).map(m => String(m.seat))
 ).size;
 
-document.getElementById("availableSeats").innerText=100-occupied;
+document.getElementById("availableSeats").innerText = 100 - occupied;
 
-let pending=members.reduce((total,m)=>{
-return total+(m.status==="Pending"?Number(m.fee||0):0);
+let pending = members.reduce((total,m) => {
+return total + (m.status === "Pending" ? Number(m.fee || 0) : 0);
 },0);
 
-document.getElementById("pendingFees").innerText="₹"+pending;
+document.getElementById("pendingFees").innerText = "₹" + pending;
 }
 
 function showMembers(){
-
-document.getElementById("dashboard").style.display="none";
+document.getElementById("dashboard").style.display = "none";
 document.getElementById("membersSection").classList.add("active");
-
 displayMembers();
 }
 
 function showDashboard(){
-
-document.getElementById("dashboard").style.display="block";
+document.getElementById("dashboard").style.display = "block";
 document.getElementById("membersSection").classList.remove("active");
-
-document.getElementById("memberForm").innerHTML="";
+document.getElementById("memberForm").innerHTML = "";
 }
 
-function addMemberForm(index=null){
+function showComingSoon(name){
+alert(name + " section अभी बनाया जा रहा है। Members section पहले तैयार है।");
+}
 
-let m=index!==null?members[index]:null;
+function addMemberForm(index = null){
+let m = index !== null ? members[index] : null;
 
-document.getElementById("memberForm").innerHTML=`
-
+document.getElementById("memberForm").innerHTML = `
 <div style="margin-top:18px;padding:15px;background:#f8fafc;border-radius:10px">
 
-<h3>${m?"✏️ Edit Member":"➕ Add Member"}</h3>
+<h3>${m ? "✏️ Edit Member" : "➕ Add Member"}</h3>
 
-<input id="name" placeholder="Member Name"
-value="${m?m.name:""}">
+<input id="name" placeholder="Member Name" value="${m ? escapeHTML(m.name) : ""}">
 
-<input id="mobile" placeholder="Mobile Number"
-type="tel"
-value="${m?m.mobile:""}">
+<input id="mobile" placeholder="Mobile Number" type="tel" value="${m ? escapeHTML(m.mobile || "") : ""}">
 
-<input id="seat" placeholder="Seat Number (1-100)"
-type="number"
-min="1"
-max="100"
-value="${m?m.seat:""}">
+<input id="seat" placeholder="Seat Number (1-100)" type="number" min="1" max="100" value="${m ? m.seat || "" : ""}">
 
 <label>Joining Date</label>
-<input id="joining" type="date"
-value="${m?m.joining:""}">
+<input id="joining" type="date" value="${m ? m.joining || "" : ""}">
 
 <label>Expiry Date</label>
-<input id="expiry" type="date"
-value="${m?m.expiry:""}">
+<input id="expiry" type="date" value="${m ? m.expiry || "" : ""}">
 
-<input id="fee" placeholder="Monthly Fee"
-type="number"
-value="${m?m.fee:""}">
+<input id="fee" placeholder="Monthly Fee" type="number" value="${m ? m.fee || "" : ""}">
 
 <select id="status">
-<option value="Paid" ${m&&m.status==="Paid"?"selected":""}>Paid</option>
-<option value="Pending" ${m&&m.status==="Pending"?"selected":""}>Pending</option>
+<option value="Paid" ${m && m.status === "Paid" ? "selected" : ""}>Paid</option>
+<option value="Pending" ${m && m.status === "Pending" ? "selected" : ""}>Pending</option>
 </select>
 
-<button onclick="saveMember(${index===null?-1:index})">
-${m?"Update Member":"Save Member"}
+<button type="button" onclick="saveMember(${index === null ? -1 : index})">
+${m ? "Update Member" : "Save Member"}
 </button>
 
-<button class="gray" onclick="document.getElementById('memberForm').innerHTML=''">
+<button type="button" class="gray" onclick="document.getElementById('memberForm').innerHTML=''">
 Cancel
 </button>
 
@@ -218,27 +175,26 @@ Cancel
 }
 
 function saveMember(index){
-
-let name=document.getElementById("name").value.trim();
-let mobile=document.getElementById("mobile").value.trim();
-let seat=document.getElementById("seat").value;
-let joining=document.getElementById("joining").value;
-let expiry=document.getElementById("expiry").value;
-let fee=document.getElementById("fee").value;
-let status=document.getElementById("status").value;
+let name = document.getElementById("name").value.trim();
+let mobile = document.getElementById("mobile").value.trim();
+let seat = document.getElementById("seat").value.trim();
+let joining = document.getElementById("joining").value;
+let expiry = document.getElementById("expiry").value;
+let fee = document.getElementById("fee").value;
+let status = document.getElementById("status").value;
 
 if(!name){
 alert("Member Name डालना जरूरी है");
 return;
 }
 
-if(seat && (seat<1 || seat>100)){
+if(seat && (Number(seat) < 1 || Number(seat) > 100)){
 alert("Seat number 1 से 100 के बीच होना चाहिए");
 return;
 }
 
-let duplicate=members.some((m,i)=>
-m.seat && seat && m.seat==seat && i!==index
+let duplicate = members.some((m,i) =>
+m.seat && seat && String(m.seat) === String(seat) && i !== index
 );
 
 if(duplicate){
@@ -246,71 +202,97 @@ alert("यह seat पहले से किसी member को मिली �
 return;
 }
 
-let data={
-name,
-mobile,
-seat,
-joining,
-expiry,
-fee,
-status
-};
+let data = {name,mobile,seat,joining,expiry,fee,status};
 
-if(index===-1){
+if(index === -1){
 members.push(data);
 }else{
-members[index]=data;
+members[index] = data;
 }
 
 save();
 
-document.getElementById("memberForm").innerHTML="";
+document.getElementById("memberForm").innerHTML = "";
 
-alert(index===-1?"Member successfully added":"Member successfully updated");
+alert(index === -1 ? "Member successfully added" : "Member successfully updated");
 }
 
 function displayMembers(){
+let list = document.getElementById("membersList");
 
-let list=document.getElementById("membersList");
+let search = (document.getElementById("search")?.value || "").toLowerCase();
 
-let search=(document.getElementById("search")?.value||"")
-.toLowerCase();
-
-let filtered=members.filter(m=>
-m.name.toLowerCase().includes(search) ||
-m.mobile.includes(search)
+let filtered = members.filter(m =>
+String(m.name || "").toLowerCase().includes(search) ||
+String(m.mobile || "").includes(search)
 );
 
-if(filtered.length===0){
-list.innerHTML="<p style='margin-top:20px;color:#777'>कोई member नहीं मिला।</p>";
+if(filtered.length === 0){
+list.innerHTML = "<p style='margin-top:20px;color:#777'>कोई member नहीं मिला।</p>";
 return;
 }
 
-list.innerHTML=filtered.map((m)=>{
+list.innerHTML = filtered.map(m => {
 
-let index=members.indexOf(m);
+let index = members.indexOf(m);
 
 return `
-
 <div class="member">
 
 <h3>👤 ${escapeHTML(m.name)}</h3>
 
-<p>📱 Mobile: ${escapeHTML(m.mobile||"-")}</p>
+<p>📱 Mobile: ${escapeHTML(m.mobile || "-")}</p>
 
-<p>💺 Seat: ${m.seat||"Not Assigned"}</p>
+<p>💺 Seat: ${escapeHTML(m.seat || "Not Assigned")}</p>
 
-<p>📅 Joining: ${m.joining||"-"}</p>
+<p>📅 Joining: ${escapeHTML(m.joining || "-")}</p>
 
-<p>📅 Expiry: ${m.expiry||"-"}</p>
+<p>📅 Expiry: ${escapeHTML(m.expiry || "-")}</p>
 
-<p>💰 Fee: ₹${m.fee||0}</p>
+<p>💰 Fee: ₹${escapeHTML(m.fee || 0)}</p>
 
 <p>💳 Status:
-<b>${m.status}</b>
+<b>${escapeHTML(m.status || "-")}</b>
 </p>
 
 <div class="actions">
 
-<button class="edit"
-onclick="
+<button type="button" class="edit" onclick="addMemberForm(${index})">
+✏️ Edit
+</button>
+
+<button type="button" class="danger" onclick="deleteMember(${index})">
+🗑️ Delete
+</button>
+
+</div>
+</div>
+`;
+}).join("");
+}
+
+function deleteMember(index){
+if(confirm("क्या आप इस member को delete करना चाहते हैं?")){
+members.splice(index,1);
+save();
+}
+}
+
+function escapeHTML(text){
+return String(text).replace(/[&<>"']/g,function(match){
+const map = {
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#039;"
+};
+return map[match];
+});
+}
+
+updateDashboard();
+</script>
+
+</body>
+</html>
