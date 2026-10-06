@@ -178,14 +178,18 @@ async function persist(){
   }
 }
 
-"libraryFullAppV1";
-let data=JSON.parse(localStorage.getItem(KEY)||"null")||{members:[],payments:[],notices:[],settings:{name:"Library Admin Dashboard"}};
-
-function persist(){localStorage.setItem(KEY,JSON.stringify(data));updateAll()}
 function login(){
-if(document.getElementById("loginUser").value==="admin" && document.getElementById("loginPass").value==="admin123"){
-document.getElementById("login").style.display="none";sessionStorage.setItem("libLogin","1");updateAll()
-}else document.getElementById("loginMsg").innerText="Username या Password गलत है";
+  const u=document.getElementById("loginUser").value.trim();
+  const p=document.getElementById("loginPass").value;
+  const msg=document.getElementById("loginMsg");
+  if(u==="admin" && p==="admin123"){
+    document.getElementById("login").style.display="none";
+    sessionStorage.setItem("libLogin","1");
+    msg.innerText="";
+    updateAll();
+  }else{
+    msg.innerText="Username या Password गलत है";
+  }
 }
 function logout(){sessionStorage.removeItem("libLogin");location.reload()}
 if(sessionStorage.getItem("libLogin")==="1")document.getElementById("login").style.display="none";
