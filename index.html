@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f6f9;
+      color: #222;
+    }
+
+    header {
+      background: #1e3a8a;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 25px;
+    }
+
+    header p {
+      margin-top: 6px;
+      opacity: 0.9;
+    }
+
+    .container {
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 16px;
+      color: #555;
+    }
+
+    .number {
+      font-size: 30px;
+      font-weight: bold;
+      margin-top: 10px;
+      color: #1e3a8a;
+    }
+
+    .menu {
+      margin-top: 25px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    button {
+      border: none;
+      padding: 16px;
+      border-radius: 10px;
+      background: #1e3a8a;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #172d6b;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px;
+      color: #777;
+    }
+
+    @media (max-width: 600px) {
+      .cards,
+      .menu {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>📚 Library Management</h1>
+    <p>Library Admin Dashboard</p>
+  </header>
+
+  <div class="container">
+
+    <div class="cards">
+
+      <div class="card">
+        <h2>👥 Total Members</h2>
+        <div class="number">0</div>
+      </div>
+
+      <div class="card">
+        <h2>💺 Total Seats</h2>
+        <div class="number">100</div>
+      </div>
+
+      <div class="card">
+        <h2>🟢 Available Seats</h2>
+        <div class="number">100</div>
+      </div>
+
+      <div class="card">
+        <h2>💰 Pending Fees</h2>
+        <div class="number">₹0</div>
+      </div>
+
+    </div>
+
+    <div class="menu">
+
+      <button>👥 Members</button>
+
+      <button>💺 Seats</button>
+
+      <button>💰 Fees</button>
+
+      <button>📢 Notices</button>
+
+      <button>📊 Reports</button>
+
+      <button>⚙️ Settings</button>
+
+    </div>
+
+  </div>
+
+  <footer>
+    Library Management System © 2026
+  </footer>
+
+</body>
+        </html>
